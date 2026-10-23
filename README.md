@@ -6,16 +6,16 @@ WorkforcePro is an independent, multi-tenant B2B workforce management SaaS platf
 
 ## 1. System Applications & Technology Stack
 
-| Application | Platform | Technology Stack |
-| :--- | :--- | :--- |
-| **Mobile Employee Client** | Android (Mobile) | Flutter + Dart (BLoC, Native Platform Channels, ML Kit) |
-| **Web Admin Portal** | Desktop Web | React 18 + Vite + TypeScript (TanStack Query, Zustand) |
-| **Backend REST API** | Cloud Server | Node.js + Express + TypeScript (Clean Architecture) |
-| **Database & Storage** | Document / Object | MongoDB 7.x + Mongoose, Redis, S3-Compatible Object Store |
+| Application | Platform | Directory | Technology Stack |
+| :--- | :--- | :--- | :--- |
+| **Shared Contracts** | Shared Library | `packages/api-contracts` | TypeScript, Zod |
+| **Backend REST API** | Cloud Server | `apps/api` | Node.js (v22+) + Express + TypeScript + Mongoose |
+| **Web Admin Portal** | Desktop Web | `apps/admin` | React 18 + Vite + TypeScript |
+| **Mobile Employee Client** | Android (Mobile) | `apps/mobile` | Flutter 3.47+ & Dart 3.13+ |
 
 ---
 
-## 2. Monorepo Structure
+## 2. Monorepo Organization
 
 ```
 workforcepro/
@@ -37,43 +37,131 @@ workforcepro/
 │   ├── PAYROLL_RULES.md           # Payroll Mathematical & Statutory Engine Spec
 │   ├── TESTING_STRATEGY.md        # Quality Assurance & Testing Pyramid
 │   └── IMPLEMENTATION_PHASES.md   # Phased Implementation Roadmap
+├── package.json                   # Root monorepo workspace configuration
+├── tsconfig.base.json             # Shared strict TypeScript compiler configuration
 ├── .gitignore
-├── .env.example
+├── .env.example                   # Environment configuration template
 └── README.md
 ```
 
 ---
 
-## 3. Core Architectural Highlights
+## 3. Getting Started & Setup Guide
 
-* **Zero-Trust Multi-Tenancy**: Every database record is strictly partitioned with `tenantId` enforced at the Mongoose query layer.
-* **Server-Authoritative Geofencing**: Client GPS coordinates are verified on the backend using the Haversine formula; client assertions are never trusted.
-* **Anti-Spoofing & Device Integrity**: Mobile client blocks Android mock locations (`Location.isMock()`), detects root/emulators, and enforces single-device hardware binding.
-* **Attendance-Linked Payroll Engine**: Automated Loss of Pay (LOP) deductions, overtime premiums, and parameterized statutory deductions calculated directly from immutable daily attendance records.
-* **Clean Architecture & Typed Contracts**: Complete separation of Domain, Application, Interface, and Infrastructure layers, sharing compile-time typed Zod contracts across API, Web Admin, and Mobile clients.
+### 3.1 Prerequisites
+* **Node.js**: `v20.x` or `v22.x` (Recommended: `v22.12.0`)
+* **npm**: `v10.x` or `v11.x` (Recommended: `v11.6.1`)
+* **Flutter SDK**: `v3.24.x` or higher (Tested: `v3.47.4`) with Dart `3.x`
+* **MongoDB**: `v7.x` (local or hosted MongoDB Atlas instance)
+
+### 3.2 Environment Setup
+1. Clone the repository and navigate to the project directory:
+   ```bash
+   cd WorkforcePro
+   ```
+
+2. Copy the environment configuration template:
+   ```bash
+   cp .env.example .env
+   ```
+   *(Update variables in `.env` as appropriate for your local MongoDB instance. Never commit `.env` or production secrets).*
+
+3. Install monorepo dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Resolve Flutter mobile dependencies:
+   ```bash
+   cd apps/mobile && flutter pub get && cd ../..
+   ```
 
 ---
 
-## 4. Documentation Index
+## 4. Build, Test & Development Commands
 
-For detailed specifications, consult the documents in the `docs/` directory:
+### 4.1 Build
+* **Build Shared Contracts**:
+  ```bash
+  npm run build:contracts
+  ```
+* **Build Backend API**:
+  ```bash
+  npm run build:api
+  ```
+* **Build Web Admin Portal**:
+  ```bash
+  npm run build:admin
+  ```
+* **Build All (Full Workspace)**:
+  ```bash
+  npm run build
+  ```
 
-1. [Product Requirements Document](file:///d:/WORKFORCEPRO/docs/PRODUCT_REQUIREMENTS.md)
-2. [Feature Matrix & RBAC](file:///d:/WORKFORCEPRO/docs/FEATURE_MATRIX.md)
-3. [System Architecture](file:///d:/WORKFORCEPRO/docs/ARCHITECTURE.md)
-4. [Database Schema & ERD](file:///d:/WORKFORCEPRO/docs/DATABASE_SCHEMA.md)
-5. [API Specification](file:///d:/WORKFORCEPRO/docs/API_SPECIFICATION.md)
-6. [Tenant Isolation & Security Model](file:///d:/WORKFORCEPRO/docs/SECURITY_MODEL.md)
-7. [Repository Audit & Research Report](file:///d:/WORKFORCEPRO/docs/REPOSITORY_AUDIT.md)
-8. [GPS & Selfie Attendance Rules](file:///d:/WORKFORCEPRO/docs/ATTENDANCE_RULES.md)
-9. [Payroll Engine & Calculation Rules](file:///d:/WORKFORCEPRO/docs/PAYROLL_RULES.md)
-10. [Testing Strategy & Quality Gates](file:///d:/WORKFORCEPRO/docs/TESTING_STRATEGY.md)
-11. [Implementation Roadmap & Phases](file:///d:/WORKFORCEPRO/docs/IMPLEMENTATION_PHASES.md)
+### 4.2 Type-Check & Lint
+* **Type-check all workspaces**:
+  ```bash
+  npm run typecheck
+  ```
+* **Analyze Flutter code**:
+  ```bash
+  npm run mobile:analyze
+  ```
+
+### 4.3 Automated Testing
+* **Test Shared Contracts** (Vitest):
+  ```bash
+  npm run test:contracts
+  ```
+* **Test Backend API** (Vitest + Supertest integration):
+  ```bash
+  npm run test:api
+  ```
+* **Test Web Admin Portal** (Vitest):
+  ```bash
+  npm run test:admin
+  ```
+* **Test Mobile Client** (Flutter Test):
+  ```bash
+  npm run test:mobile
+  ```
+* **Run All Web/Node Tests**:
+  ```bash
+  npm test
+  ```
+
+### 4.4 Independent Local Development
+Each application can be run independently in watch/dev mode:
+
+* **Backend API** (Runs on port `5000` with live reload):
+  ```bash
+  npm run dev:api
+  ```
+* **Web Admin Portal** (Runs on port `3000` via Vite HMR):
+  ```bash
+  npm run dev:admin
+  ```
+* **Shared Contracts Watcher** (Auto-compiles contracts on change):
+  ```bash
+  npm run dev:contracts
+  ```
+* **Mobile Client** (Android emulator / device):
+  ```bash
+  cd apps/mobile && flutter run
+  ```
 
 ---
 
-## 5. Current Status
+## 5. Architectural Invariants
 
-* **Current Milestone**: Phase 0 (Project Discovery & Planning) — **COMPLETED**.
-* **Next Milestone**: Phase 1 (Monorepo Foundation & API Contracts Package).
-* Execution is currently halted awaiting stakeholder review and approval.
+* **Strict Multi-Tenant Isolation**: Data isolation enforced at both the application and Mongoose schema query middleware layer.
+* **Shared Strongly-Typed Contracts**: All HTTP endpoints, standard error envelopes, and DTOs are declared in `@workforcepro/api-contracts` using Zod schemas and inferred TypeScript types.
+* **Zero Production Secrets**: Environment variables are validated on startup using Zod schemas in `apps/api/src/config/env.ts`.
+
+---
+
+## 6. Implementation Status
+
+* **Phase 0 (Discovery & Planning)**: Completed.
+* **Phase 1 (Monorepo Foundation & API Contracts)**: Completed & Verified.
+* **Phase 2 (Multi-Tenant Architecture & Auth)**: Pending Review & Approval.

@@ -1,0 +1,40 @@
+{
+  "name": "workforcepro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Enterprise Multi-Tenant Workforce Management SaaS",
+  "workspaces": [
+    "packages/*",
+    "apps/api",
+    "apps/admin"
+  ],
+  "scripts": {
+    "build:contracts": "npm --workspace=@workforcepro/api-contracts run build",
+    "build:api": "npm --workspace=@workforcepro/api run build",
+    "build:admin": "npm --workspace=@workforcepro/admin run build",
+    "build": "npm run build:contracts && npm run build:api && npm run build:admin",
+    "test:contracts": "npm --workspace=@workforcepro/api-contracts run test",
+    "test:api": "npm --workspace=@workforcepro/api run test",
+    "test:admin": "npm --workspace=@workforcepro/admin run test",
+    "test:mobile": "npm run mobile:test",
+    "test": "npm run test:contracts && npm run test:api && npm run test:admin",
+    "lint:api": "npm --workspace=@workforcepro/api run lint",
+    "lint:admin": "npm --workspace=@workforcepro/admin run lint",
+    "lint": "npm run lint:api && npm run lint:admin",
+    "typecheck": "npm --workspace=@workforcepro/api-contracts run typecheck && npm --workspace=@workforcepro/api run typecheck && npm --workspace=@workforcepro/admin run typecheck",
+    "dev:contracts": "npm --workspace=@workforcepro/api-contracts run dev",
+    "dev:api": "npm --workspace=@workforcepro/api run dev",
+    "dev:admin": "npm --workspace=@workforcepro/admin run dev",
+    "mobile:analyze": "cd apps/mobile && flutter analyze",
+    "mobile:test": "cd apps/mobile && flutter test"
+  },
+  "keywords": [
+    "workforce-management",
+    "multi-tenant",
+    "attendance",
+    "payroll",
+    "geofencing"
+  ],
+  "author": "WorkforcePro Team",
+  "license": "UNLICENSED"
+}
