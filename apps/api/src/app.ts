@@ -4,7 +4,12 @@ import helmet from 'helmet';
 import { env } from './config/env.js';
 import { requestLogger } from './interfaces/http/middlewares/requestLogger.js';
 import { errorHandler } from './interfaces/http/middlewares/errorHandler.js';
+import { createRateLimiter } from './interfaces/http/middlewares/rateLimiter.js';
 import { healthRouter } from './interfaces/http/routes/health.routes.js';
+import { authRouter } from './interfaces/http/routes/auth.routes.js';
+import { companyRouter } from './interfaces/http/routes/company.routes.js';
+import { branchRouter } from './interfaces/http/routes/branch.routes.js';
+import { auditRouter } from './interfaces/http/routes/audit.routes.js';
 import { ErrorCode, createErrorResponse } from '@workforcepro/api-contracts';
 
 export function createApp(): Express {
@@ -32,12 +37,17 @@ export function createApp(): Express {
   app.use(express.json({ limit: '1mb' }));
   app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-  // 3. Structured Request Logging
+  // 3. Structured Request Logging & Edge Rate Limiting
   app.use(requestLogger);
+  app.use(createRateLimiter({ windowMs: 60 * 1000, maxRequests: 200 }));
 
-  // 4. Base Routes
+  // 4. API Routes
   app.use('/health', healthRouter);
   app.use('/api/v1/health', healthRouter);
+  app.use('/api/v1/auth', authRouter);
+  app.use('/api/v1/companies', companyRouter);
+  app.use('/api/v1/branches', branchRouter);
+  app.use('/api/v1/audit-logs', auditRouter);
 
   // 5. 404 Route Not Found Handler
   app.use((req: Request, res: Response) => {
