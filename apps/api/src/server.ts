@@ -4,7 +4,10 @@ import { logger } from './infrastructure/logging/logger.js';
 import { connectDatabase, disconnectDatabase } from './infrastructure/database/mongodb.js';
 
 async function bootstrap() {
-  logger.info({ environment: env.NODE_ENV, port: env.PORT }, 'Initializing WorkforcePro API service...');
+  logger.info(
+    { environment: env.NODE_ENV, port: env.PORT },
+    'Initializing WorkforcePro API service...'
+  );
 
   // Attempt database connection in non-test mode (warn if unreachable, do not crash prematurely)
   try {

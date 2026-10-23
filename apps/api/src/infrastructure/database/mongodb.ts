@@ -18,15 +18,21 @@ export async function connectDatabase(): Promise<typeof mongoose | null> {
 
   try {
     isConnecting = true;
-    logger.info({ uri: env.MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@') }, 'Connecting to MongoDB...');
+    logger.info(
+      { uri: env.MONGODB_URI.replace(/\/\/([^:]+):([^@]+)@/, '//***:***@') },
+      'Connecting to MongoDB...'
+    );
 
     if (env.MONGODB_DEBUG) {
       mongoose.set('debug', true);
     }
 
     const instance = await mongoose.connect(env.MONGODB_URI, {
+      maxPoolSize: 20,
+      minPoolSize: 5,
       serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 10000
+      connectTimeoutMS: 10000,
+      heartbeatFrequencyMS: 10000
     });
 
     logger.info('MongoDB connected successfully.');
@@ -46,11 +52,15 @@ export async function disconnectDatabase(): Promise<void> {
   }
 }
 
-export async function checkDatabaseHealth(): Promise<{ status: ServiceStatus; latencyMs?: number }> {
+export async function checkDatabaseHealth(): Promise<{
+  status: ServiceStatus;
+  latencyMs?: number;
+}> {
   const readyState = mongoose.connection.readyState;
 
   switch (readyState) {
-    case 1: { // Connected
+    case 1: {
+      // Connected
       try {
         const start = Date.now();
         if (mongoose.connection.db) {
@@ -71,6 +81,14 @@ export async function checkDatabaseHealth(): Promise<{ status: ServiceStatus; la
       return { status: 'disconnected' };
   }
 }
+
+mongoose.connection.on('connected', () => {
+  logger.info('MongoDB connection established.');
+});
+
+mongoose.connection.on('reconnected', () => {
+  logger.info('MongoDB reconnected.');
+});
 
 mongoose.connection.on('error', (err) => {
   logger.error({ err }, 'MongoDB connection error event triggered.');

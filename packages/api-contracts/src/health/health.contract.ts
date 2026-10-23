@@ -1,6 +1,12 @@
 import { z } from 'zod';
 
-export const serviceStatusSchema = z.enum(['connected', 'disconnected', 'connecting', 'error', 'disabled']);
+export const serviceStatusSchema = z.enum([
+  'connected',
+  'disconnected',
+  'connecting',
+  'error',
+  'disabled'
+]);
 export type ServiceStatus = z.infer<typeof serviceStatusSchema>;
 
 export const overallStatusSchema = z.enum(['ok', 'degraded', 'error']);

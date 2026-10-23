@@ -19,7 +19,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "lint": "tsc --noEmit"
   },
   "dependencies": {
     "zod": "^3.23.8"

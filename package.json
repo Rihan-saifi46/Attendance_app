@@ -20,7 +20,10 @@
     "test": "npm run test:contracts && npm run test:api && npm run test:admin",
     "lint:api": "npm --workspace=@workforcepro/api run lint",
     "lint:admin": "npm --workspace=@workforcepro/admin run lint",
-    "lint": "npm run lint:api && npm run lint:admin",
+    "lint:contracts": "npm --workspace=@workforcepro/api-contracts run lint",
+    "lint": "eslint \"apps/**/*.{ts,tsx}\" \"packages/**/*.{ts,tsx}\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,json,css}\" \"packages/**/*.{ts,json}\"",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,json,css}\" \"packages/**/*.{ts,json}\"",
     "typecheck": "npm --workspace=@workforcepro/api-contracts run typecheck && npm --workspace=@workforcepro/api run typecheck && npm --workspace=@workforcepro/admin run typecheck",
     "dev:contracts": "npm --workspace=@workforcepro/api-contracts run dev",
     "dev:api": "npm --workspace=@workforcepro/api run dev",
@@ -36,5 +39,11 @@
     "geofencing"
   ],
   "author": "WorkforcePro Team",
-  "license": "UNLICENSED"
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "prettier": "^3.9.10",
+    "typescript-eslint": "^8.72.0"
+  }
 }

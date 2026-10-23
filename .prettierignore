@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.dart_tool
+coverage
+*.lock
+package-lock.json
+apps/mobile/android
+apps/mobile/.idea
+apps/mobile/.metadata

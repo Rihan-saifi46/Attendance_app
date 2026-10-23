@@ -8,9 +8,9 @@ WorkforcePro is an independent, multi-tenant B2B workforce management SaaS platf
 
 | Application | Platform | Directory | Technology Stack |
 | :--- | :--- | :--- | :--- |
-| **Shared Contracts** | Shared Library | `packages/api-contracts` | TypeScript, Zod |
-| **Backend REST API** | Cloud Server | `apps/api` | Node.js (v22+) + Express + TypeScript + Mongoose |
-| **Web Admin Portal** | Desktop Web | `apps/admin` | React 18 + Vite + TypeScript |
+| **Shared Contracts** | Shared Library | `packages/api-contracts` | TypeScript (Strict), Zod |
+| **Backend REST API** | Cloud Server | `apps/api` | Node.js (v22+) + Express + TypeScript (Strict) + Mongoose |
+| **Web Admin Portal** | Desktop Web | `apps/admin` | React 18 + Vite + TypeScript (Strict) |
 | **Mobile Employee Client** | Android (Mobile) | `apps/mobile` | Flutter 3.47+ & Dart 3.13+ |
 
 ---
@@ -24,7 +24,7 @@ workforcepro/
 │   ├── admin/                     # Web Admin Portal (React / Vite / TypeScript)
 │   └── api/                       # REST API (Node.js / Express / TypeScript)
 ├── packages/
-│   └── api-contracts/             # Shared Typed DTOs, Enums & Zod Schemas
+│   └── api-contracts/             # Shared Typed DTOs, Enums, v1 Versioned Zod Schemas
 ├── docs/                          # Comprehensive Architecture & System Specifications
 │   ├── PRODUCT_REQUIREMENTS.md    # Product Requirements Document (PRD)
 │   ├── FEATURE_MATRIX.md          # Multi-Platform Feature & RBAC Matrix
@@ -39,8 +39,10 @@ workforcepro/
 │   └── IMPLEMENTATION_PHASES.md   # Phased Implementation Roadmap
 ├── package.json                   # Root monorepo workspace configuration
 ├── tsconfig.base.json             # Shared strict TypeScript compiler configuration
-├── .gitignore
-├── .env.example                   # Environment configuration template
+├── eslint.config.mjs              # ESLint 9 Flat Config with TypeScript support
+├── .prettierrc                    # Code formatting standard configuration
+├── .gitignore                     # Git exclusion rules for secrets, builds, IDE & logs
+├── .env.example                   # Environment configuration template (placeholders only)
 └── README.md
 ```
 
@@ -78,7 +80,7 @@ workforcepro/
 
 ---
 
-## 4. Build, Test & Development Commands
+## 4. Build, Lint, Format & Automated Test Commands
 
 ### 4.1 Build
 * **Build Shared Contracts**:
@@ -98,17 +100,31 @@ workforcepro/
   npm run build
   ```
 
-### 4.2 Type-Check & Lint
-* **Type-check all workspaces**:
+### 4.2 Type-Checking & Linting
+* **Type-check all TypeScript workspaces**:
   ```bash
   npm run typecheck
+  ```
+* **Lint all TypeScript workspaces (ESLint)**:
+  ```bash
+  npm run lint
   ```
 * **Analyze Flutter code**:
   ```bash
   npm run mobile:analyze
   ```
 
-### 4.3 Automated Testing
+### 4.3 Code Formatting (Prettier)
+* **Check formatting**:
+  ```bash
+  npm run format:check
+  ```
+* **Auto-format source files**:
+  ```bash
+  npm run format
+  ```
+
+### 4.4 Automated Testing
 * **Test Shared Contracts** (Vitest):
   ```bash
   npm run test:contracts
@@ -130,38 +146,87 @@ workforcepro/
   npm test
   ```
 
-### 4.4 Independent Local Development
-Each application can be run independently in watch/dev mode:
+---
 
-* **Backend API** (Runs on port `5000` with live reload):
+## 5. Independent Application Execution
+
+Each application is decoupled and can be installed, configured, and run independently:
+
+### 5.1 Backend REST API (`apps/api`)
+```bash
+# Navigate to the API application
+cd apps/api
+
+# Install dependencies (or install at root)
+npm install
+
+# Build TypeScript
+npm run build
+
+# Start in development mode with live-reload
+npm run dev
+
+# Or start compiled production server
+npm start
+```
+* The API runs by default on `http://localhost:5000`.
+* Verify health check:
   ```bash
-  npm run dev:api
+  curl http://localhost:5000/health
+  # Or versioned endpoint:
+  curl http://localhost:5000/api/v1/health
   ```
-* **Web Admin Portal** (Runs on port `3000` via Vite HMR):
-  ```bash
-  npm run dev:admin
-  ```
-* **Shared Contracts Watcher** (Auto-compiles contracts on change):
-  ```bash
-  npm run dev:contracts
-  ```
-* **Mobile Client** (Android emulator / device):
-  ```bash
-  cd apps/mobile && flutter run
-  ```
+* Returns `200 OK` (with `status: "ok"` when MongoDB is connected, or `status: "degraded"` when running without active DB).
+
+### 5.2 Web Admin Portal (`apps/admin`)
+```bash
+# Navigate to the Admin application
+cd apps/admin
+
+# Install dependencies
+npm install
+
+# Start Vite development server with HMR
+npm run dev
+
+# Or build and preview production distribution
+npm run build
+npm run preview
+```
+* Accessible by default on `http://localhost:5173` (dev) or `http://localhost:4173` (preview).
+
+### 5.3 Android Mobile Employee Client (`apps/mobile`)
+```bash
+# Navigate to the Mobile application
+cd apps/mobile
+
+# Get dependencies
+flutter pub get
+
+# Run static analysis
+flutter analyze
+
+# Run unit and widget tests
+flutter test
+
+# Launch mobile application on connected emulator or device
+flutter run
+```
 
 ---
 
-## 5. Architectural Invariants
+## 6. Architectural Invariants
 
-* **Strict Multi-Tenant Isolation**: Data isolation enforced at both the application and Mongoose schema query middleware layer.
-* **Shared Strongly-Typed Contracts**: All HTTP endpoints, standard error envelopes, and DTOs are declared in `@workforcepro/api-contracts` using Zod schemas and inferred TypeScript types.
-* **Zero Production Secrets**: Environment variables are validated on startup using Zod schemas in `apps/api/src/config/env.ts`.
+* **Strict TypeScript Strict Mode**: Enforced across API and Web Admin with `strict: true`, `noImplicitAny: true`, `strictNullChecks: true`, and `noUncheckedIndexedAccess: true`.
+* **Shared, Versioned API Contracts**: Standard error envelopes, pagination metadata, and DTOs are defined in `@workforcepro/api-contracts` under the `v1` namespace using Zod schemas.
+* **Sensitive Data Redaction**: Pino structured logging redacts passwords, tokens, authorization headers, cookies, banking details, and secrets across top-level and nested properties.
+* **Resilient MongoDB Connection Management**: Implements connection pooling (`maxPoolSize: 20`, `minPoolSize: 5`), reconnection event handling, graceful shutdown (`SIGTERM`/`SIGINT`), and non-crashing degraded operation during startup when the database is temporarily unreachable.
+* **Separation of Environments**: Dedicated test configuration (`workforcepro_test` database, silent logging during tests) isolated from development and production configs.
 
 ---
 
-## 6. Implementation Status
+## 7. Implementation Status
 
 * **Phase 0 (Discovery & Planning)**: Completed.
 * **Phase 1 (Monorepo Foundation & API Contracts)**: Completed & Verified.
-* **Phase 2 (Multi-Tenant Architecture & Auth)**: Pending Review & Approval.
+* **Phase 2 (Fresh Project Foundation Review)**: Verified and ready for review.

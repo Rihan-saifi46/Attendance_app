@@ -1,35 +1,62 @@
-import pino from 'pino';
+import pino, { DestinationStream, LoggerOptions } from 'pino';
 import { env } from '../../config/env.js';
 
-const sensitiveFieldPaths = [
+export const sensitiveFieldPaths = [
   'password',
+  '*.password',
+  '*.*.password',
   'passwordHash',
+  '*.passwordHash',
   'token',
+  '*.token',
   'accessToken',
+  '*.accessToken',
   'refreshToken',
+  '*.refreshToken',
   'authorization',
-  'cookie',
+  '*.authorization',
   'req.headers.authorization',
+  'headers.authorization',
+  'cookie',
+  '*.cookie',
   'req.headers.cookie',
+  'headers.cookie',
   'bankDetails',
+  '*.bankDetails',
   'accountNumber',
+  '*.accountNumber',
   'panOrTaxId',
-  'secret'
+  '*.panOrTaxId',
+  'secret',
+  '*.secret',
+  '*.*.secret'
 ];
 
-export const logger = pino({
-  level: env.LOG_LEVEL,
-  redact: {
-    paths: sensitiveFieldPaths,
-    censor: '[REDACTED]'
-  },
-  timestamp: pino.stdTimeFunctions.isoTime,
-  transport: env.NODE_ENV === 'development' ? {
-    target: 'pino-pretty',
-    options: {
-      colorize: true,
-      translateTime: 'SYS:standard',
-      ignore: 'pid,hostname'
-    }
-  } : undefined
-});
+export function createLogger(options?: LoggerOptions, destination?: DestinationStream) {
+  const isDev = env.NODE_ENV === 'development';
+  return pino(
+    {
+      level: options?.level || env.LOG_LEVEL,
+      redact: {
+        paths: sensitiveFieldPaths,
+        censor: '[REDACTED]'
+      },
+      timestamp: pino.stdTimeFunctions.isoTime,
+      transport:
+        isDev && !destination
+          ? {
+              target: 'pino-pretty',
+              options: {
+                colorize: true,
+                translateTime: 'SYS:standard',
+                ignore: 'pid,hostname'
+              }
+            }
+          : undefined,
+      ...options
+    },
+    destination
+  );
+}
+
+export const logger = createLogger();

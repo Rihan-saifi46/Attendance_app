@@ -13,18 +13,20 @@ export function createApp(): Express {
   // 1. Security & Edge Headers
   app.use(helmet());
 
-  const allowedOrigins = env.CORS_ORIGIN_WHITELIST.split(',').map(s => s.trim());
-  app.use(cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl) in non-production
-      if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== 'production') {
-        callback(null, true);
-      } else {
-        callback(new Error(`Origin ${origin} not permitted by CORS`));
-      }
-    },
-    credentials: true
-  }));
+  const allowedOrigins = env.CORS_ORIGIN_WHITELIST.split(',').map((s) => s.trim());
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl) in non-production
+        if (!origin || allowedOrigins.includes(origin) || env.NODE_ENV !== 'production') {
+          callback(null, true);
+        } else {
+          callback(new Error(`Origin ${origin} not permitted by CORS`));
+        }
+      },
+      credentials: true
+    })
+  );
 
   // 2. Request Body Parsers
   app.use(express.json({ limit: '1mb' }));
@@ -39,12 +41,9 @@ export function createApp(): Express {
 
   // 5. 404 Route Not Found Handler
   app.use((req: Request, res: Response) => {
-    res.status(404).json(
-      createErrorResponse(
-        ErrorCode.NOT_FOUND,
-        `Cannot ${req.method} ${req.path}`
-      )
-    );
+    res
+      .status(404)
+      .json(createErrorResponse(ErrorCode.NOT_FOUND, `Cannot ${req.method} ${req.path}`));
   });
 
   // 6. Centralized Error Handler
