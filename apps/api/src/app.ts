@@ -9,6 +9,9 @@ import { healthRouter } from './interfaces/http/routes/health.routes.js';
 import { authRouter } from './interfaces/http/routes/auth.routes.js';
 import { companyRouter } from './interfaces/http/routes/company.routes.js';
 import { branchRouter } from './interfaces/http/routes/branch.routes.js';
+import { departmentRouter } from './interfaces/http/routes/department.routes.js';
+import { shiftRouter } from './interfaces/http/routes/shift.routes.js';
+import { employeeRouter } from './interfaces/http/routes/employee.routes.js';
 import { auditRouter } from './interfaces/http/routes/audit.routes.js';
 import { ErrorCode, createErrorResponse } from '@workforcepro/api-contracts';
 
@@ -47,6 +50,9 @@ export function createApp(): Express {
   app.use('/api/v1/auth', authRouter);
   app.use('/api/v1/companies', companyRouter);
   app.use('/api/v1/branches', branchRouter);
+  app.use('/api/v1/departments', departmentRouter);
+  app.use('/api/v1/shifts', shiftRouter);
+  app.use('/api/v1/employees', employeeRouter);
   app.use('/api/v1/audit-logs', auditRouter);
 
   // 5. 404 Route Not Found Handler
