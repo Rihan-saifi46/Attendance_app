@@ -464,3 +464,70 @@ Daily aggregated attendance status per employee, feeding into payroll calculatio
 // - { tenantId: 1, timestamp: -1 }
 // - { tenantId: 1, targetEntity: 1, targetEntityId: 1 }
 ```
+
+### 3.12 `attendance_punches` (Point-in-Time Punch Telemetry & Audit Stream)
+
+```typescript
+{
+  _id: ObjectId,
+  companyId: ObjectId,              // Tenant isolation key (Indexed)
+  employeeId: ObjectId,             // Ref: employees (Indexed)
+  action: String,                   // 'CHECK_IN' | 'CHECK_OUT'
+  serverTimestamp: Date,            // Authoritative server NTP time (Indexed)
+  clientTimestamp: Date,            // Client device timestamp (forensic telemetry)
+  coordinates: {
+    latitude: Number,
+    longitude: Number,
+    accuracyMeters: Number          // Rejection threshold if > 50m
+  },
+  branchId: ObjectId,               // Assigned branch for geofence verification
+  branchName: String,
+  shiftId: ObjectId,                // Shift active during punch
+  isWithinGeofence: Boolean,        // Server-verified via Haversine formula
+  distanceFromGeofenceMeters: Number,
+  verificationOutcome: String,      // 'VERIFIED' | 'REJECTED' | 'OVERRIDDEN'
+  rejectionReason: String,          // e.g. 'OUTSIDE_GEOFENCE', 'ACCURACY_TOO_POOR'
+  photoKey: String,                 // Private object storage key: tenants/{companyId}/attendance/{uuid}.jpg
+  photoSha256: String,              // Anti-replay 30-day deduplication
+  idempotencyKey: String,           // Client idempotency token (Unique per tenant)
+  notes: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+// Indexes:
+// - { companyId: 1, employeeId: 1, serverTimestamp: -1 }
+// - { companyId: 1, idempotencyKey: 1 } (unique)
+// - { companyId: 1, verificationOutcome: 1 }
+```
+
+### 3.13 `daily_attendance` (Aggregated Daily Attendance Lifecycle)
+
+```typescript
+{
+  _id: ObjectId,
+  companyId: ObjectId,              // Tenant isolation key (Indexed)
+  employeeId: ObjectId,             // Ref: employees (Indexed)
+  date: String,                     // YYYY-MM-DD (Indexed)
+  shiftId: ObjectId,                // Ref: shifts
+  branchId: ObjectId,               // Ref: branches
+  checkInTime: Date,                // Authoritative first punch-in timestamp
+  checkOutTime: Date,               // Authoritative latest punch-out timestamp
+  totalWorkMinutes: Number,         // Computed working duration
+  status: String,                   // 'PRESENT' | 'HALF_DAY' | 'LATE' | 'ABSENT' | 'CHECKED_IN'
+  isOverridden: Boolean,            // True if updated by HR administrative action
+  overrideReason: String,
+  overriddenBy: ObjectId,           // Ref: users (admin/HR)
+  punches: [{
+    punchId: ObjectId,              // Ref: attendance_punches
+    action: String,
+    timestamp: Date,
+    verificationOutcome: String,
+    photoKey: String
+  }],
+  createdAt: Date,
+  updatedAt: Date
+}
+// Indexes:
+// - { companyId: 1, employeeId: 1, date: 1 } (unique)
+// - { companyId: 1, date: 1, status: 1 }
+```

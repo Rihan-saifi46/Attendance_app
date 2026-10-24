@@ -74,3 +74,5 @@ uploads/
 temp/
 tmp/
 *.tmp
+data/
+apps/api/data/

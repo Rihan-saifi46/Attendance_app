@@ -141,10 +141,7 @@ export class StorageService {
       .update(payloadB64)
       .digest('base64url');
 
-    const isSigValid = crypto.timingSafeEqual(
-      Buffer.from(providedSig),
-      Buffer.from(expectedSig)
-    );
+    const isSigValid = crypto.timingSafeEqual(Buffer.from(providedSig), Buffer.from(expectedSig));
     if (!isSigValid) return false;
 
     try {
@@ -181,7 +178,8 @@ export class StorageService {
         if (file.startsWith(photoKey)) {
           const filePath = path.join(dirPath, file);
           const ext = path.extname(file).toLowerCase();
-          const mimeType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+          const mimeType =
+            ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
           return {
             stream: fs.createReadStream(filePath),
             mimeType

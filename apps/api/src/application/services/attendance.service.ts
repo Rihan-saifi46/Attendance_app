@@ -11,7 +11,10 @@ import {
   UserRoleType
 } from '@workforcepro/api-contracts';
 import { AppError } from '../../interfaces/http/middlewares/errorHandler.js';
-import { AttendancePunchModel, IAttendancePunch } from '../../infrastructure/database/models/attendancePunch.model.js';
+import {
+  AttendancePunchModel,
+  IAttendancePunch
+} from '../../infrastructure/database/models/attendancePunch.model.js';
 import { DailyAttendanceModel } from '../../infrastructure/database/models/dailyAttendance.model.js';
 import { EmployeeModel, IEmployee } from '../../infrastructure/database/models/employee.model.js';
 import { BranchModel, IBranch } from '../../infrastructure/database/models/branch.model.js';
@@ -368,10 +371,7 @@ export class AttendanceService {
   /**
    * Retrieves today's attendance state for the authenticated employee.
    */
-  async getTodayAttendance(
-    companyId: string,
-    userId: string
-  ): Promise<TodayAttendanceDto> {
+  async getTodayAttendance(companyId: string, userId: string): Promise<TodayAttendanceDto> {
     const employee = await this.resolveEmployee(companyId, userId);
     if (!employee) {
       throw new AppError(404, ErrorCode.EMPLOYEE_NOT_FOUND, 'Employee profile not found');
@@ -427,9 +427,7 @@ export class AttendanceService {
             latitude: typeof branch.latitude === 'number' ? branch.latitude : 37.7749,
             longitude: typeof branch.longitude === 'number' ? branch.longitude : -122.4194,
             geofenceRadiusMeters:
-              typeof branch.geofenceRadiusMeters === 'number'
-                ? branch.geofenceRadiusMeters
-                : 200
+              typeof branch.geofenceRadiusMeters === 'number' ? branch.geofenceRadiusMeters : 200
           }
         : null
     };
@@ -443,12 +441,14 @@ export class AttendanceService {
     requestingUser: { userId: string; role: UserRoleType },
     query: AttendanceHistoryQuery
   ): Promise<{ data: AttendancePunchDto[]; total: number; page: number; limit: number }> {
-    const isPrivileged = ([
-      UserRole.PLATFORM_ADMIN,
-      UserRole.COMPANY_OWNER,
-      UserRole.HR_ADMIN,
-      UserRole.MANAGER
-    ] as readonly string[]).includes(requestingUser.role);
+    const isPrivileged = (
+      [
+        UserRole.PLATFORM_ADMIN,
+        UserRole.COMPANY_OWNER,
+        UserRole.HR_ADMIN,
+        UserRole.MANAGER
+      ] as readonly string[]
+    ).includes(requestingUser.role);
 
     let targetEmployeeId: string;
     if (query.employeeId && isPrivileged) {
@@ -482,15 +482,10 @@ export class AttendanceService {
 
     const [total, punches] = await Promise.all([
       AttendancePunchModel.countDocuments(filter),
-      AttendancePunchModel.find(filter)
-        .sort({ serverTimestamp: -1 })
-        .skip(skip)
-        .limit(limit)
+      AttendancePunchModel.find(filter).sort({ serverTimestamp: -1 }).skip(skip).limit(limit)
     ]);
 
-    const data = await Promise.all(
-      punches.map((p) => this.mapToPunchDto(p, companyId))
-    );
+    const data = await Promise.all(punches.map((p) => this.mapToPunchDto(p, companyId)));
 
     return {
       data,
@@ -509,11 +504,9 @@ export class AttendanceService {
     input: AttendanceOverrideInput,
     ip?: string
   ): Promise<{ message: string; date: string; status: string }> {
-    const isPrivileged = ([
-      UserRole.PLATFORM_ADMIN,
-      UserRole.COMPANY_OWNER,
-      UserRole.HR_ADMIN
-    ] as readonly string[]).includes(adminUser.role);
+    const isPrivileged = (
+      [UserRole.PLATFORM_ADMIN, UserRole.COMPANY_OWNER, UserRole.HR_ADMIN] as readonly string[]
+    ).includes(adminUser.role);
 
     if (!isPrivileged) {
       throw new AppError(
@@ -682,12 +675,13 @@ export class AttendanceService {
 
       // Check if late based on shift start time
       if (employee.shiftId) {
-        const shift = await ShiftModel.findById(employee.shiftId);
+        const shift = await ShiftModel.findOne({ _id: employee.shiftId, companyId });
         if (shift && shift.startTime) {
           const [startHour, startMin] = shift.startTime.split(':').map(Number);
           const punchHour = serverTimestamp.getUTCHours();
           const punchMin = serverTimestamp.getUTCMinutes();
-          const shiftMinutes = (startHour || 9) * 60 + (startMin || 0) + (shift.gracePeriodMinutes || 15);
+          const shiftMinutes =
+            (startHour || 9) * 60 + (startMin || 0) + (shift.gracePeriodMinutes || 15);
           const punchMinutes = punchHour * 60 + punchMin;
           if (punchMinutes > shiftMinutes) {
             daily.isLate = true;
@@ -761,7 +755,7 @@ export class AttendanceService {
       employeeName = `${cachedEmployee.firstName} ${cachedEmployee.lastName}`.trim();
       employeeCode = cachedEmployee.employeeCode;
     } else {
-      const emp = await EmployeeModel.findById(punch.employeeId);
+      const emp = await EmployeeModel.findOne({ _id: punch.employeeId, companyId });
       if (emp) {
         employeeName = `${emp.firstName} ${emp.lastName}`.trim();
         employeeCode = emp.employeeCode;
@@ -771,18 +765,14 @@ export class AttendanceService {
     if (cachedBranch) {
       branchName = cachedBranch.name;
     } else {
-      const b = await BranchModel.findById(punch.branchId);
+      const b = await BranchModel.findOne({ _id: punch.branchId, companyId });
       if (b) {
         branchName = b.name;
       }
     }
 
     // Short-lived token for private photo access (15 minutes expiry)
-    const token = storageService.generateShortLivedPhotoToken(
-      companyId,
-      punch.photoKey,
-      15
-    );
+    const token = storageService.generateShortLivedPhotoToken(companyId, punch.photoKey, 15);
     const authorizedPhotoUrl = `/api/v1/attendance/photos/${punch.photoKey}?token=${token}`;
 
     return {

@@ -13,12 +13,7 @@ export class GeofenceService {
   /**
    * Calculates the Great Circle distance between two coordinates in meters using the Haversine formula.
    */
-  static calculateDistanceMeters(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ): number {
+  static calculateDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
 
     const phi1 = toRadians(lat1);
@@ -48,12 +43,7 @@ export class GeofenceService {
   ): GeofenceEvaluationResult {
     const isAccuracySufficient = punchAccuracyMeters <= this.MAX_ACCEPTABLE_ACCURACY_METERS;
 
-    const distanceMeters = this.calculateDistanceMeters(
-      punchLat,
-      punchLon,
-      targetLat,
-      targetLon
-    );
+    const distanceMeters = this.calculateDistanceMeters(punchLat, punchLon, targetLat, targetLon);
 
     // Dynamic GPS accuracy buffer capped at 20 meters
     const dynamicBuffer = Math.min(

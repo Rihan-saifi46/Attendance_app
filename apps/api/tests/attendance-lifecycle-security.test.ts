@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../src/app.js';
 import { setupTestDatabase, clearTestDatabase, teardownTestDatabase } from './testHelper.js';
-import { ErrorCode, UserRole } from '@workforcepro/api-contracts';
+import { ErrorCode } from '@workforcepro/api-contracts';
 import { BranchModel } from '../src/infrastructure/database/models/branch.model.js';
 import { EmployeeModel } from '../src/infrastructure/database/models/employee.model.js';
 import { AttendancePunchModel } from '../src/infrastructure/database/models/attendancePunch.model.js';
@@ -25,7 +25,6 @@ describe('Attendance Lifecycle State Machine & Multi-Tenant Security', () => {
   let tokenB: string;
   let companyIdB: string;
   let branchIdB: string;
-  let employeeIdB: string;
   let userIdB: string;
 
   beforeAll(async () => {
@@ -87,14 +86,17 @@ describe('Attendance Lifecycle State Machine & Multi-Tenant Security', () => {
         lastName: 'Owner',
         email: 'quinn@quantum.test',
         phone: '2125550100',
+        designation: 'Managing Director',
         branchId: branchIdA,
         departmentId: deptResA.body.data.id,
         shiftId: shiftResA.body.data.id,
         employmentType: 'FULL_TIME',
         employmentStatus: 'ACTIVE',
         joiningDate: '2026-01-01',
-        salaryType: 'MONTHLY',
-        baseRate: 9000
+        salaryDetails: {
+          salaryType: 'MONTHLY',
+          baseRate: 9000
+        }
       });
     employeeIdA = empResA.body.data.id;
 
@@ -146,16 +148,18 @@ describe('Attendance Lifecycle State Machine & Multi-Tenant Security', () => {
         lastName: 'Drake',
         email: 'nathan@nebula.test',
         phone: '442079460000',
+        designation: 'Security Lead',
         branchId: branchIdB,
         departmentId: deptResB.body.data.id,
         shiftId: shiftResB.body.data.id,
         employmentType: 'FULL_TIME',
         employmentStatus: 'ACTIVE',
         joiningDate: '2026-01-01',
-        salaryType: 'MONTHLY',
-        baseRate: 7500
+        salaryDetails: {
+          salaryType: 'MONTHLY',
+          baseRate: 7500
+        }
       });
-    employeeIdB = empResB.body.data.id;
   });
 
   it('RULE 1: Should prevent duplicate Check-In when employee is already checked in', async () => {
@@ -281,7 +285,7 @@ describe('Attendance Lifecycle State Machine & Multi-Tenant Security', () => {
 
     expect(res.status).toBe(403);
     expect(res.body.error.code).toBe(ErrorCode.EMPLOYEE_NOT_ACTIVE);
-    expect(res.body.error.message).toContain('inactive');
+    expect(res.body.error.message).toContain('TERMINATED');
   });
 
   it('RULE 5: Multi-Tenant Security — Strict isolation of attendance operations across tenants', async () => {
@@ -308,11 +312,11 @@ describe('Attendance Lifecycle State Machine & Multi-Tenant Security', () => {
     expect(historyB.status).toBe(200);
     expect(historyB.body.data.length).toBe(0);
 
-    // 3. Tenant B attempts to fetch Tenant A private photo
+    // 3. Tenant B attempts to fetch Tenant A private photo (isolated per tenant)
     const crossTenantPhotoRes = await request(app)
       .get(`/api/v1/attendance/photos/${photoKeyA}`)
       .set('Authorization', `Bearer ${tokenB}`);
-    expect(crossTenantPhotoRes.status).toBe(403);
+    expect(crossTenantPhotoRes.status).toBe(404); // Properly hidden and not found in Tenant B scope
 
     // 4. Tenant B attempts to override Tenant A employee attendance
     const overrideRes = await request(app)

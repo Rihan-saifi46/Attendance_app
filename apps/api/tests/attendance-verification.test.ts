@@ -4,7 +4,6 @@ import { createApp } from '../src/app.js';
 import { setupTestDatabase, clearTestDatabase, teardownTestDatabase } from './testHelper.js';
 import { ErrorCode } from '@workforcepro/api-contracts';
 import { BranchModel } from '../src/infrastructure/database/models/branch.model.js';
-import { EmployeeModel } from '../src/infrastructure/database/models/employee.model.js';
 import { AttendancePunchModel } from '../src/infrastructure/database/models/attendancePunch.model.js';
 
 // Valid minimal JPEG image data URI (> 50 bytes)
@@ -16,7 +15,6 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
   let token: string;
   let companyId: string;
   let branchId: string;
-  let employeeId: string;
   let shiftId: string;
 
   beforeAll(async () => {
@@ -89,16 +87,18 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
         lastName: 'Pendleton',
         email: 'arthur@apex.test',
         phone: '4155551234',
+        designation: 'Operations Director',
         branchId,
         departmentId: deptRes.body.data.id,
         shiftId,
         employmentType: 'FULL_TIME',
         employmentStatus: 'ACTIVE',
         joiningDate: '2026-01-01',
-        salaryType: 'MONTHLY',
-        baseRate: 8500
+        salaryDetails: {
+          salaryType: 'MONTHLY',
+          baseRate: 8500
+        }
       });
-    employeeId = empRes.body.data.id;
   });
 
   it('RULE 1: Should verify valid Check-In within geofence and store selfie in private storage', async () => {
@@ -128,7 +128,10 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
     expect(res.body.data.authorizedPhotoUrl).toContain('token=');
 
     // Confirm punch is stored in DB with authoritative server timestamp
-    const punchInDb = await AttendancePunchModel.findById(res.body.data.id);
+    const punchInDb = await AttendancePunchModel.findOne({
+      _id: res.body.data.id,
+      companyId
+    });
     expect(punchInDb).toBeDefined();
     expect(punchInDb!.verificationOutcome).toBe('VERIFIED');
   });
@@ -155,6 +158,7 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
 
     // Server should record the rejected attempt in audit stream
     const rejectedPunches = await AttendancePunchModel.find({
+      companyId,
       verificationOutcome: 'REJECTED_OUT_OF_RANGE'
     });
     expect(rejectedPunches.length).toBe(1);
@@ -183,6 +187,7 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
 
     // Verify rejected punch was persisted with REJECTED_POOR_ACCURACY
     const rejectedPunches = await AttendancePunchModel.find({
+      companyId,
       verificationOutcome: 'REJECTED_POOR_ACCURACY'
     });
     expect(rejectedPunches.length).toBe(1);

@@ -31,12 +31,7 @@ attendanceRouter.post(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user || !req.companyId) return;
-      const punch = await attendanceService.recordPunch(
-        req.companyId,
-        req.user,
-        req.body,
-        req.ip
-      );
+      const punch = await attendanceService.recordPunch(req.companyId, req.user, req.body, req.ip);
       res.status(201).json(createSuccessResponse(punch));
     } catch (err) {
       next(err);
@@ -55,10 +50,7 @@ attendanceRouter.get(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       if (!req.user || !req.companyId) return;
-      const today = await attendanceService.getTodayAttendance(
-        req.companyId,
-        req.user.userId
-      );
+      const today = await attendanceService.getTodayAttendance(req.companyId, req.user.userId);
       res.status(200).json(createSuccessResponse(today));
     } catch (err) {
       next(err);
@@ -79,11 +71,7 @@ attendanceRouter.get(
     try {
       if (!req.user || !req.companyId) return;
       const query = req.query as unknown as AttendanceHistoryQuery;
-      const history = await attendanceService.getAttendanceHistory(
-        req.companyId,
-        req.user,
-        query
-      );
+      const history = await attendanceService.getAttendanceHistory(req.companyId, req.user, query);
       const meta = createPaginationMeta({
         page: history.page,
         limit: history.limit,
@@ -118,7 +106,11 @@ attendanceRouter.get(
           if (parts[0]) {
             const payload = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
             if (payload && payload.companyId) {
-              const isValid = storageService.verifyPhotoToken(queryToken, payload.companyId, photoKey);
+              const isValid = storageService.verifyPhotoToken(
+                queryToken,
+                payload.companyId,
+                photoKey
+              );
               if (isValid) {
                 authorizedCompanyId = payload.companyId;
               }

@@ -156,3 +156,44 @@ Employees cannot avoid late marks by manually changing their device clock:
    - *Unresolved*: Should offline punches older than 24 hours require mandatory administrative review before being admitted into daily attendance?
 4. **Night Shifts & Midnight Crossover**:
    - *Assumption*: A shift spanning from 21:00 to 06:00 is credited to the calendar date on which the shift commenced.
+
+---
+
+## 7. Security, Privacy & Compliance Architecture
+
+### 7.1 Authoritative Server Timestamps (Zero-Trust Model)
+* The mobile client's clock is never trusted for attendance record keeping.
+* `serverTimestamp` (NTP-synchronized server receipt time) is strictly recorded as the authoritative audit time for every check-in and check-out event.
+* Client device timestamps are preserved exclusively for forensic drift telemetry.
+
+### 7.2 Point-in-Time Geofence Capture (No Continuous Background Tracking)
+* WorkforcePro requests location permissions strictly on-demand when the employee initiates a punch action.
+* Continuous background location monitoring, background geofencing wakeups, and persistent GPS tracking are explicitly prohibited by system architecture and user privacy policy.
+* Reported horizontal accuracy is verified: punches with `accuracyMeters > 50` are rejected to prevent urban reflection errors.
+
+### 7.3 Private Object Storage & Short-Lived Access
+* Attendance selfies are validated (JPEG/PNG MIME checks, 5MB limit, SHA-256 hash generation) and stored in tenant-isolated, private storage buckets (`tenants/{companyId}/attendance/`).
+* Photos are NEVER exposed via public URLs.
+* Secure streaming endpoints require authentication and authorized HMAC-SHA256 signature tokens that expire after **15 minutes**.
+* Storage retention policies automatically purge raw photo binaries after **90 days** (`storageService.purgeExpiredPhotos()`).
+
+### 7.4 Idempotency & Duplicate Punch Prevention
+* Mobile clients generate a unique `idempotencyKey` per punch intent.
+* The API backend enforces unique compound indexing on `{ companyId: 1, idempotencyKey: 1 }`.
+* If a network timeout occurs and the user retries, the mobile client reuses the exact same `idempotencyKey`, guaranteeing that retry requests safely return the original punch record without creating duplicate punches or multiple check-ins.
+
+---
+
+## 8. Security Disclaimers & Remaining Limitations
+
+### 8.1 Identity & Spoofing Disclaimer
+> [!CAUTION]
+> Neither GPS coordinates nor a standard camera selfie alone proves individual employee identity or guarantees spoofing prevention. GPS can be compromised via simulated location providers or SDR signal generators, and standard 2D selfies can be vulnerable to presentation attacks (photos of screens, high-resolution prints) in the absence of certified hardware-backed liveness or multi-factor biometric matching. The system provides operational presence records and auditability, but requires supervisory oversight.
+
+### 8.2 Biometric Face Matching Status
+Automatic facial comparison and liveness detection models are **NOT implemented in this phase**. In compliance with GDPR Article 9, Illinois BIPA, California CPRA, and global data privacy regulations, automated biometric matching requires formal compliance review, written employee consent policies, and risk assessments. Refer to [BIOMETRIC_AND_LIVENESS_PROPOSAL.md](file:///d:/WORKFORCEPRO/docs/BIOMETRIC_AND_LIVENESS_PROPOSAL.md) for the complete proposal awaiting approval.
+
+### 8.3 Remaining Technical Limitations
+1. **Indoor Multi-Story Positioning**: GPS accuracy degrades in high-rise steel/concrete buildings. Future phases will support BLE (Bluetooth Low Energy) beacon triangulation and Wi-Fi BSSID verification for indoor branches.
+2. **Offline Mode**: Current implementation requires network connectivity to verify geofences on the server. True offline store-and-forward with hardware tamper-resistant monotonic clocks will be introduced in Phase 6.
+3. **Hardware Device Binding**: Device fingerprinting is supported via client headers, but cryptographic secure-enclave hardware attestation (SafetyNet / Play Integrity / Apple DeviceCheck) is scheduled for the full mobile release.
