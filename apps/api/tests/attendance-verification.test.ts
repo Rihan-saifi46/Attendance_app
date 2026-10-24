@@ -41,12 +41,8 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
       adminPassword: 'Password123!@#'
     });
     token = reg.body.data.accessToken;
-
-    // Decode companyId from registration response
-    const meRes = await request(app)
-      .get('/api/v1/auth/me')
-      .set('Authorization', `Bearer ${token}`);
-    companyId = meRes.body.data.companyId;
+    companyId = reg.body.data.user.companyId;
+    const userId = reg.body.data.user.id;
 
     // 2. Setup Branch with specific coordinates and 200m geofence radius
     // Market St, San Francisco: (37.774929, -122.419416)
@@ -55,11 +51,14 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
       .set('Authorization', `Bearer ${token}`);
     branchId = branchRes.body.data[0].id;
 
-    await BranchModel.findByIdAndUpdate(branchId, {
-      latitude: 37.774929,
-      longitude: -122.419416,
-      geofenceRadiusMeters: 200
-    });
+    await BranchModel.findOneAndUpdate(
+      { _id: branchId, companyId },
+      {
+        latitude: 37.774929,
+        longitude: -122.419416,
+        geofenceRadiusMeters: 200
+      }
+    );
 
     // 3. Setup Department & Shift
     const deptRes = await request(app)
@@ -85,7 +84,7 @@ describe('GPS & Selfie Attendance Verification Engine', () => {
       .set('Authorization', `Bearer ${token}`)
       .send({
         employeeCode: 'EMP-001',
-        userId: meRes.body.data.user.id,
+        userId,
         firstName: 'Arthur',
         lastName: 'Pendleton',
         email: 'arthur@apex.test',
