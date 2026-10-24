@@ -6,3 +6,4 @@ export * from './auth/roles.js';
 export * from './auth/auth.contract.js';
 export * from './organization/index.js';
 export * from './audit/audit.contract.js';
+export * from './attendance/index.js';

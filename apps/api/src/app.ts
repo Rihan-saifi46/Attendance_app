@@ -13,6 +13,7 @@ import { departmentRouter } from './interfaces/http/routes/department.routes.js'
 import { shiftRouter } from './interfaces/http/routes/shift.routes.js';
 import { employeeRouter } from './interfaces/http/routes/employee.routes.js';
 import { auditRouter } from './interfaces/http/routes/audit.routes.js';
+import { attendanceRouter } from './interfaces/http/routes/attendance.routes.js';
 import { ErrorCode, createErrorResponse } from '@workforcepro/api-contracts';
 
 export function createApp(): Express {
@@ -36,9 +37,9 @@ export function createApp(): Express {
     })
   );
 
-  // 2. Request Body Parsers
-  app.use(express.json({ limit: '1mb' }));
-  app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+  // 2. Request Body Parsers (10MB to accommodate high-res selfie uploads)
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
   // 3. Structured Request Logging & Edge Rate Limiting
   app.use(requestLogger);
@@ -53,6 +54,7 @@ export function createApp(): Express {
   app.use('/api/v1/departments', departmentRouter);
   app.use('/api/v1/shifts', shiftRouter);
   app.use('/api/v1/employees', employeeRouter);
+  app.use('/api/v1/attendance', attendanceRouter);
   app.use('/api/v1/audit-logs', auditRouter);
 
   // 5. 404 Route Not Found Handler

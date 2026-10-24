@@ -6,3 +6,5 @@ export * from './shift.model.js';
 export * from './employee.model.js';
 export * from './employeeHistory.model.js';
 export * from './auditLog.model.js';
+export * from './attendancePunch.model.js';
+export * from './dailyAttendance.model.js';

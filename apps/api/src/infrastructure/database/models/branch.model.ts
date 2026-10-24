@@ -13,6 +13,9 @@ export interface IBranch extends Document {
   country: string;
   timezone: string;
   isHeadquarters: boolean;
+  latitude: number;
+  longitude: number;
+  geofenceRadiusMeters: number;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -44,6 +47,9 @@ const branchSchema = new Schema<IBranch>(
     country: { type: String, required: true, trim: true },
     timezone: { type: String, default: 'UTC' },
     isHeadquarters: { type: Boolean, default: false },
+    latitude: { type: Number, default: 37.7749 },
+    longitude: { type: Number, default: -122.4194 },
+    geofenceRadiusMeters: { type: Number, default: 200 },
     isDeleted: { type: Boolean, default: false }
   },
   {
